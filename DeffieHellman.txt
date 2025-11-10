@@ -1,0 +1,115 @@
+package deaf;
+
+import java.util.Scanner;
+
+public class DeffieHellman {
+
+    // Fast modular exponentiation (O(log exp))
+    static int modExp(int base, int exp, int mod) {
+        long result = 1;
+        long b = base % mod;
+        while (exp > 0) {
+            if ((exp & 1) == 1) {
+                result = (result * b) % mod;
+            }
+            b = (b * b) % mod;
+            exp = exp >> 1;
+        }
+        return (int) result;
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        // Public, agreed parameters
+        int primeModulus = 23; // p
+        int generator = 5;     // g
+
+        System.out.println("Public parameters: p = " + primeModulus + ", g = " + generator);
+        System.out.println();
+
+        // You can change these or take user input
+        System.out.print("Enter private key for Alice (e.g., 6): ");
+        int alicePriv = sc.nextInt();
+        System.out.print("Enter private key for Bob   (e.g., 15): ");
+        int bobPriv = sc.nextInt();
+        System.out.print("Enter private key for Mallory (attacker) (e.g., 7): ");
+        int malloryPriv = sc.nextInt();
+        System.out.println();
+
+        // Compute public keys
+        int alicePub   = modExp(generator, alicePriv, primeModulus);   // A = g^a mod p
+        int bobPub     = modExp(generator, bobPriv, primeModulus);     // B = g^b mod p
+        int malloryPub = modExp(generator, malloryPriv, primeModulus); // M = g^m mod p
+
+        System.out.println("Menu:");
+        System.out.println("1. Normal Diffie-Hellman exchange (Alice <-> Bob)");
+        System.out.println("2. Diffie-Hellman with Man-In-The-Middle (Mallory)");
+        System.out.print("Choose option (1 or 2): ");
+        int choice = sc.nextInt();
+        System.out.println();
+
+        if (choice == 1) {
+            // Normal DH
+            System.out.println("Alice's Public Key: " + alicePub);
+            System.out.println("Bob's   Public Key: " + bobPub);
+            System.out.println();
+
+            int sharedByAlice = modExp(bobPub, alicePriv, primeModulus); // s = B^a mod p
+            int sharedByBob   = modExp(alicePub, bobPriv, primeModulus); // s = A^b mod p
+
+            System.out.println("Alice computes shared secret: " + sharedByAlice);
+            System.out.println("Bob   computes shared secret: " + sharedByBob);
+            System.out.println();
+
+            if (sharedByAlice == sharedByBob) {
+                System.out.println("Shared secret matches. Secure channel established.");
+            } else {
+                System.out.println("Shared secrets do not match! Something went wrong.");
+            }
+
+        } else if (choice == 2) {
+            // MITM demonstration
+            System.out.println("Alice's Public Key (original A): " + alicePub);
+            System.out.println("Bob's   Public Key (original B): " + bobPub);
+            System.out.println("Mallory's Public Key (M)       : " + malloryPub);
+            System.out.println();
+
+            // Mallory intercepts and substitutes M for A and B
+            System.out.println("Mallory intercepts and sends his public key M to both Alice and Bob.");
+            System.out.println();
+
+            // Alice believes she received Bob's pub, but actually received Mallory's
+            int aliceSharedWithMallory = modExp(malloryPub, alicePriv, primeModulus); // sA = M^a mod p
+            System.out.println("Alice computes (thinking it's shared with Bob): " + aliceSharedWithMallory);
+
+            // Bob believes he received Alice's pub, but actually received Mallory's
+            int bobSharedWithMallory = modExp(malloryPub, bobPriv, primeModulus); // sB = M^b mod p
+            System.out.println("Bob computes   (thinking it's shared with Alice): " + bobSharedWithMallory);
+            System.out.println();
+
+            // Mallory computes the two secrets using the real public keys he intercepted
+            int mallorySecretWithAlice = modExp(alicePub, malloryPriv, primeModulus); // sMA = A^m mod p
+            int mallorySecretWithBob   = modExp(bobPub, malloryPriv, primeModulus);   // sMB = B^m mod p
+            System.out.println("Mallory computes secret with Alice (A^m): " + mallorySecretWithAlice);
+            System.out.println("Mallory computes secret with Bob   (B^m): " + mallorySecretWithBob);
+            System.out.println();
+
+            boolean successWithAlice = (aliceSharedWithMallory == mallorySecretWithAlice);
+            boolean successWithBob   = (bobSharedWithMallory == mallorySecretWithBob);
+
+            if (successWithAlice && successWithBob) {
+                System.out.println("MITM attack successful!");
+                System.out.println("Alice actually shares a secret with Mallory, not Bob.");
+                System.out.println("Bob   actually shares a secret with Mallory, not Alice.");
+            } else {
+                System.out.println("MITM attack failed (unexpected for this demo).");
+            }
+
+        } else {
+            System.out.println("Invalid option chosen.");
+        }
+
+        sc.close();
+    }
+}
