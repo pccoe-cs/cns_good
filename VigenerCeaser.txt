@@ -1,0 +1,55 @@
+import java.util.Scanner;
+
+public class PolyalphabeticCipher {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.print("Enter message: ");
+        String msg = sc.nextLine().toUpperCase();
+
+        System.out.print("Enter key: ");
+        String key = sc.nextLine().toUpperCase();
+
+        String encrypted = encrypt(msg, key);
+        System.out.println("Encrypted: " + encrypted);
+
+        String decrypted = decrypt(encrypted, key);
+        System.out.println("Decrypted: " + decrypted);
+
+        sc.close();
+    }
+
+    static String encrypt(String msg, String key) {
+        StringBuilder result = new StringBuilder();
+        int keyIndex = 0;
+
+        for (char ch : msg.toCharArray()) {
+            if (Character.isLetter(ch)) {
+                int shift = key.charAt(keyIndex) - 'A';
+                char enc = (char) ((ch - 'A' + shift) % 26 + 'A');
+                result.append(enc);
+                keyIndex = (keyIndex + 1) % key.length();
+            } else {
+                result.append(ch);
+            }
+        }
+        return result.toString();
+    }
+
+    static String decrypt(String msg, String key) {
+        StringBuilder result = new StringBuilder();
+        int keyIndex = 0;
+
+        for (char ch : msg.toCharArray()) {
+            if (Character.isLetter(ch)) {
+                int shift = key.charAt(keyIndex) - 'A';
+                char dec = (char) ((ch - 'A' - shift + 26) % 26 + 'A');
+                result.append(dec);
+                keyIndex = (keyIndex + 1) % key.length();
+            } else {
+                result.append(ch);
+            }
+        }
+        return result.toString();
+    }
+}
