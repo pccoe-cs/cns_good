@@ -1,0 +1,93 @@
+package tommy;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class Receiver {
+    public static void main(String[] args) {
+        try {
+            Scanner sc = new Scanner(System.in);
+            System.out.print("Enter first prime (p): ");
+            long p = sc.nextLong();
+            System.out.print("Enter second prime (q): ");
+            long q = sc.nextLong();
+
+            long n = p * q;
+            long phi = (p - 1) * (q - 1);
+
+            // Choose e such that 1 < e < phi and gcd(e, phi) = 1
+            long e = 3;
+            while (gcd(e, phi) != 1) e++;
+
+            // Compute d (modular inverse of e mod phi)
+            long d = modInverse(e, phi);
+
+            System.out.println("Generated Public Key: (e=" + e + ", n=" + n + ")");
+            System.out.println("Generated Private Key: (d=" + d + ", n=" + n + ")");
+
+            // Step 2: Setup socket and send public key
+            ServerSocket server = new ServerSocket(65433);
+            System.out.println("Receiver: Waiting for connection from Sender...");
+
+            Socket conn = server.accept();
+            System.out.println("Receiver: Connected by " + conn.getInetAddress());
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            PrintWriter out = new PrintWriter(conn.getOutputStream(), true);
+
+            // Send the public key (e, n)
+            out.println(e + "," + n);
+            System.out.println("Receiver: Public Key is sent to Sender");
+
+            // Step 3: Receive ciphertext and decrypt
+            String cipherStr = in.readLine();
+            long cipher = Long.parseLong(cipherStr);
+            System.out.println("Receiver: Ciphertext received: " + cipher);
+
+            long start = System.nanoTime();
+            long decrypted = modExp(cipher, d, n);
+            double time = (System.nanoTime() - start) / 1_000_000_000.0;
+
+            System.out.println("Receiver: Decrypted Text is: " + decrypted);
+            System.out.printf("Decryption Time is: %.6f seconds\n", time);
+
+            conn.close();
+            server.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Function to find gcd
+    static long gcd(long a, long b) {
+        while (b != 0) {
+            long temp = b;
+            b = a % b;
+            a = temp;
+        }
+        return a;
+    }
+
+    // Function to find modular inverse
+    static long modInverse(long e, long phi) {
+        for (long d = 1; d < phi; d++) {
+            if ((d * e) % phi == 1) return d;
+        }
+        return 0;
+    }
+
+    // Fast modular exponentiation (O(log exp))
+    static long modExp(long base, long exp, long mod) {
+        long result = 1;
+        long b = base % mod;
+        while (exp > 0) {
+            if (exp % 2 == 1) {
+                result = (result * b) % mod;
+            }
+            b = (b * b) % mod;
+            exp = exp / 2;
+        }
+        return result;
+    }
+}
