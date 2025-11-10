@@ -1,0 +1,44 @@
+import java.util.*;
+
+public class MonoAlphabeticCipher {
+    static String plainAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    static String cipherAlphabet = "QWERTYUIOPASDFGHJKLZXCVBNM";
+
+    static String encrypt(String msg) {
+        msg = msg.toUpperCase();
+        StringBuilder res = new StringBuilder();
+        for (char c : msg.toCharArray()) {
+            if (Character.isLetter(c)) {
+                int index = plainAlphabet.indexOf(c);
+                res.append(cipherAlphabet.charAt(index));
+            } else res.append(c);
+        }
+        return res.toString();
+    }
+
+    static String decrypt(String msg) {
+        msg = msg.toUpperCase();
+        StringBuilder res = new StringBuilder();
+        for (char c : msg.toCharArray()) {
+            if (Character.isLetter(c)) {
+                int index = cipherAlphabet.indexOf(c);
+                res.append(plainAlphabet.charAt(index));
+            } else res.append(c);
+        }
+        return res.toString();
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Enter message: ");
+        String msg = sc.nextLine();
+
+        String encrypted = encrypt(msg);
+        System.out.println("Encrypted: " + encrypted);
+
+        String decrypted = decrypt(encrypted);
+        System.out.println("Decrypted: " + decrypted);
+
+        sc.close();
+    }
+}
