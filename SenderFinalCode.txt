@@ -1,0 +1,65 @@
+package tommy;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class Sender {
+    public static void main(String[] args) {
+        try {
+            Socket s = new Socket("localhost", 65433);
+            System.out.println("Sender: Requesting public key from receiver...");
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+            PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+
+            // Receive public key (e, n)
+            String keyData = in.readLine();
+            String[] parts = keyData.split(",");
+            long e = Long.parseLong(parts[0]);
+            long n = Long.parseLong(parts[1]);
+            System.out.println("Sender: Received public key (e=" + e + ", n=" + n + ") from receiver");
+
+            // Input plaintext
+            Scanner sc = new Scanner(System.in);
+            long plaintext;
+            while (true) {
+                System.out.print("Sender: Enter integer plaintext to encrypt between (plaintext > 0 && plaintext < n) : ");
+                plaintext = sc.nextLong();
+                if (plaintext > 0 && plaintext < n) break;
+                System.out.println("Invalid input, please try again.");
+                System.out.print("Entered integer plaintext to encrypt: ");
+
+            }
+
+            long start = System.nanoTime();
+            long cipher = modExp(plaintext, e, n);
+            double time = (System.nanoTime() - start) / 1_000_000_000.0;
+
+            System.out.println("Sender: Ciphertext is: " + cipher);
+            System.out.printf("Encryption Time is: %.6f seconds\n", time);
+
+            // Send ciphertext to receiver
+            out.println(cipher);
+            System.out.println("Sender: Ciphertext is sent to receiver");
+
+            s.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+ // Fast modular exponentiation (O(log exp))
+    static long modExp(long base, long exp, long mod) {
+        long result = 1;
+        long b = base % mod;
+        while (exp > 0) {
+            if (exp % 2 == 1) {
+                result = (result * b) % mod;
+            }
+            b = (b * b) % mod;
+            exp = exp / 2;
+        }
+        return result;
+    }
+}
